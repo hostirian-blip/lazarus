@@ -9,6 +9,7 @@ export interface NavItem {
 
 export const CLIENT_NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard/leads", label: "Leads" },
   { href: "/dashboard/import", label: "Import" },
   { href: "/dashboard/campaigns", label: "Campaigns" },
   { href: "/dashboard/settings", label: "Settings" },
