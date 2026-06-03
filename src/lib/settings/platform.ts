@@ -24,6 +24,7 @@ export const PLATFORM_KEYS: PlatformKeyDef[] = [
   { key: "EMAIL_WEBHOOK_SECRET", label: "Inbound email webhook secret", secret: true },
   { key: "STRIPE_SECRET_KEY", label: "Stripe secret key", secret: true },
   { key: "STRIPE_WEBHOOK_SECRET", label: "Stripe webhook secret", secret: true },
+  { key: "STRIPE_PRICE_ID", label: "Stripe price ID (subscription)", secret: false },
 ];
 
 const MANAGED = new Set(PLATFORM_KEYS.map((k) => k.key));

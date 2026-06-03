@@ -3,6 +3,7 @@ import { requireSession, tenantDb } from "@/lib/tenant";
 import { tenantSecretStatus } from "@/lib/settings/tenant-secrets";
 import { AppShell, CLIENT_NAV } from "@/components/AppShell";
 import { SettingsForm } from "./SettingsForm";
+import { BillingButtons } from "./BillingButtons";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,11 @@ export default async function TenantSettings() {
         <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: 16 }}>CRM connection</h3>
         <p className="muted" style={{ fontSize: 14 }}>Connect HubSpot to import leads and write activity back.</p>
         <a className="btn btn-gold" href="/api/connectors/hubspot/start">Connect HubSpot</a>
+      </div>
+
+      <div className="card" style={{ padding: 22, maxWidth: 620, marginTop: 16 }}>
+        <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: 16 }}>Billing</h3>
+        <BillingButtons status={t.subscriptionStatus ?? null} />
       </div>
     </AppShell>
   );

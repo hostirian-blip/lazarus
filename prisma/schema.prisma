@@ -52,6 +52,8 @@ model Tenant {
   smtpHost  String?
   smtpPort  Int?
   smtpUser  String?
+  stripeCustomerId   String?
+  subscriptionStatus String?
   // Research feature flag + split-test rollout
   researchEnabled    Boolean @default(false)
   researchRolloutPct Int     @default(0)   // 0-100: % of leads assigned to research-on
