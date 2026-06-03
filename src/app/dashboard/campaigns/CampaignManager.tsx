@@ -95,13 +95,13 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
 
       <div style={{ marginTop: 12 }}>
         {steps.map((s, i) => (
-          <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
+          <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start", flexWrap: "wrap" }}>
             <select value={s.channel} onChange={(e) => setStep(i, { channel: e.target.value as "sms" | "email" })} style={cell}>
               <option value="sms">SMS</option>
               <option value="email">Email</option>
             </select>
             <input type="number" min={0} value={s.delayHours} onChange={(e) => setStep(i, { delayHours: Number(e.target.value) })} style={{ ...cell, width: 90 }} title="Delay (hours)" />
-            <textarea value={s.body} onChange={(e) => setStep(i, { body: e.target.value })} placeholder="Message template" rows={2} style={{ ...cell, flex: 1 }} />
+            <textarea value={s.body} onChange={(e) => setStep(i, { body: e.target.value })} placeholder="Message template" rows={2} style={{ ...cell, flex: 1, minWidth: 180 }} />
             <button onClick={() => setSteps(steps.filter((_, idx) => idx !== i))} style={{ ...btn, background: "#6b7280" }}>×</button>
           </div>
         ))}

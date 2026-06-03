@@ -63,8 +63,8 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
           <input type="checkbox" checked={s.researchEnabled} onChange={(e) => setS({ ...s, researchEnabled: e.target.checked })} /> Research agent enabled
         </label>
       </div>
-      <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 140 }}>
           <label style={labelStyle}>Research rollout %</label>
           <input type="number" min={0} max={100} style={inputStyle} value={s.researchRolloutPct} onChange={(e) => setS({ ...s, researchRolloutPct: Number(e.target.value) })} />
         </div>
