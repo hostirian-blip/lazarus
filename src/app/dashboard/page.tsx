@@ -33,12 +33,16 @@ export default async function Dashboard() {
       <section style={{ display: "flex", gap: 16, marginTop: 24, alignItems: "center" }}>
         <Stat label="Leads" value={leadCount} />
         <Stat label="Campaigns" value={campaignCount} />
-        <a
-          href="/dashboard/import"
-          style={{ marginLeft: "auto", padding: "10px 16px", background: "#2563eb", color: "#fff", borderRadius: 8, textDecoration: "none" }}
-        >
-          Import leads
-        </a>
+        <nav style={{ marginLeft: "auto", display: "flex", gap: 14, alignItems: "center" }}>
+          <a href="/dashboard/campaigns" style={{ color: "#2563eb" }}>Campaigns</a>
+          <a href="/dashboard/settings" style={{ color: "#2563eb" }}>Settings</a>
+          <a
+            href="/dashboard/import"
+            style={{ padding: "10px 16px", background: "#2563eb", color: "#fff", borderRadius: 8, textDecoration: "none" }}
+          >
+            Import leads
+          </a>
+        </nav>
       </section>
 
       {leadCount > 0 ? (
