@@ -18,6 +18,7 @@ const Patch = z.object({
   name: z.string().trim().min(1).max(120).optional(),
   active: z.boolean().optional(),
   sequence: z.array(Step).optional(),
+  sendMode: z.enum(["internal", "backoffice"]).optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
@@ -30,6 +31,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (parsed.data.name !== undefined) data.name = parsed.data.name;
   if (parsed.data.active !== undefined) data.active = parsed.data.active;
   if (parsed.data.sequence !== undefined) data.sequence = parsed.data.sequence as unknown as Prisma.InputJsonValue;
+  if (parsed.data.sendMode !== undefined) data.sendMode = parsed.data.sendMode;
 
   const r = await db.campaign.updateMany({ where: { id: params.id, tenantId: session.user.tenantId }, data });
   if (r.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });

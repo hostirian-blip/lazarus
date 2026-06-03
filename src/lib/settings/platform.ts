@@ -18,6 +18,7 @@ export const PLATFORM_KEYS: PlatformKeyDef[] = [
   { key: "HUBSPOT_CLIENT_SECRET", label: "HubSpot client secret", secret: true },
   { key: "TWILIO_ACCOUNT_SID", label: "Twilio Account SID", secret: false },
   { key: "TWILIO_AUTH_TOKEN", label: "Twilio Auth Token", secret: true },
+  { key: "TWILIO_MESSAGING_SERVICE_SID", label: "Twilio Messaging Service SID", secret: false },
   { key: "EMAIL_PROVIDER_API_KEY", label: "Email provider API key", secret: true },
   { key: "EMAIL_FROM", label: "Email from-address", secret: false },
   { key: "STRIPE_SECRET_KEY", label: "Stripe secret key", secret: true },

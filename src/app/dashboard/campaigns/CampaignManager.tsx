@@ -11,6 +11,7 @@ export interface Campaign {
   id: string;
   name: string;
   active: boolean;
+  sendMode: "internal" | "backoffice";
   steps: Step[];
 }
 
@@ -49,6 +50,7 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
   const router = useRouter();
   const [steps, setSteps] = useState<Step[]>(campaign.steps);
   const [active, setActive] = useState(campaign.active);
+  const [mode, setMode] = useState<Campaign["sendMode"]>(campaign.sendMode);
   const [busy, setBusy] = useState(false);
   const [enrollMsg, setEnrollMsg] = useState<string | null>(null);
 
@@ -75,7 +77,7 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
 
   return (
     <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: 16, marginBottom: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <strong style={{ fontSize: 18 }}>{campaign.name}</strong>
         <label style={{ marginLeft: "auto", fontSize: 14 }}>
           <input
@@ -92,6 +94,22 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
         <button onClick={remove} style={{ ...btn, background: "#b91c1c" }}>Delete</button>
       </div>
       {enrollMsg && <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--ink-dim)" }}>{enrollMsg}</p>}
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+        <span className="label">Send via</span>
+        <select
+          value={mode}
+          onChange={(e) => {
+            const m = e.target.value as Campaign["sendMode"];
+            setMode(m);
+            patch({ sendMode: m });
+          }}
+          style={cell}
+        >
+          <option value="internal">Internal gateway (platform)</option>
+          <option value="backoffice">My back office (own Twilio/SMTP)</option>
+        </select>
+      </div>
 
       <div style={{ marginTop: 12 }}>
         {steps.map((s, i) => (

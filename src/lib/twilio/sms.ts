@@ -1,17 +1,16 @@
-// Twilio SMS via a per-tenant Messaging Service (10DLC-registered).
-// Consent + opt-out are enforced UPSTREAM in the dispatcher (canContact); this
-// module only sends. Credentials resolve from platform settings (DB) or env.
+// Low-level Twilio SMS send. Credentials are passed in by the transport layer
+// (platform creds for "internal" mode, the tenant's own for "backoffice").
 import { ChannelNotConfiguredError } from "@/lib/send/errors";
-import { getSetting } from "@/lib/settings/platform";
 
-export async function smsConfigured(): Promise<boolean> {
-  return Boolean((await getSetting("TWILIO_ACCOUNT_SID")) && (await getSetting("TWILIO_AUTH_TOKEN")));
+export interface TwilioCreds {
+  accountSid?: string;
+  authToken?: string;
+  messagingServiceSid?: string;
 }
 
-export async function sendSms(args: { to: string; body: string; messagingServiceSid: string }): Promise<{ sid: string }> {
-  const accountSid = await getSetting("TWILIO_ACCOUNT_SID");
-  const authToken = await getSetting("TWILIO_AUTH_TOKEN");
-  if (!accountSid || !authToken) throw new ChannelNotConfiguredError("sms");
+export async function twilioSendSms(creds: TwilioCreds, to: string, body: string): Promise<{ sid: string }> {
+  const { accountSid, authToken, messagingServiceSid } = creds;
+  if (!accountSid || !authToken || !messagingServiceSid) throw new ChannelNotConfiguredError("sms");
 
   const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
     method: "POST",
@@ -19,7 +18,7 @@ export async function sendSms(args: { to: string; body: string; messagingService
       Authorization: "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: new URLSearchParams({ To: args.to, Body: args.body, MessagingServiceSid: args.messagingServiceSid }),
+    body: new URLSearchParams({ To: to, Body: body, MessagingServiceSid: messagingServiceSid }),
   });
   if (!res.ok) throw new Error(`Twilio send failed (${res.status}): ${await res.text()}`);
   const json = (await res.json()) as { sid: string };

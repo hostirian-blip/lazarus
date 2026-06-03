@@ -114,6 +114,7 @@ model Campaign {
   name      String
   sequence  Json    // steps: channel, delay, template/voice, branching
   active    Boolean @default(false)
+  sendMode  String  @default("internal") // internal = platform gateway | backoffice = tenant's own Twilio/SMTP
   createdAt DateTime @default(now())
   enrollments Enrollment[]
 }

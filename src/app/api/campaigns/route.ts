@@ -26,6 +26,7 @@ export async function POST(req: Request) {
     name: parsed.data.name,
     sequence: [] as unknown as Prisma.InputJsonValue,
     active: false,
+    sendMode: "internal",
   });
   return NextResponse.json({ ok: true, campaign }, { status: 201 });
 }

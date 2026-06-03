@@ -4,8 +4,7 @@
 import { db } from "@/lib/db";
 import { tenantDb } from "@/lib/tenant";
 import { canContact } from "@/lib/consent/guard";
-import { sendSms } from "@/lib/twilio/sms";
-import { sendEmail } from "@/lib/email/send";
+import { sendMessage } from "@/lib/send/transport";
 import { ChannelNotConfiguredError } from "@/lib/send/errors";
 import { unsubscribeUrl } from "@/lib/consent/unsubscribe";
 import { renderTemplate } from "./render";
@@ -97,15 +96,15 @@ export async function runDueSends(limit = 100): Promise<TickResult> {
       }
 
       // Send (gated by channel credentials).
+      const sendMode = e.campaign.sendMode === "backoffice" ? "backoffice" : "internal";
       try {
         if (step.channel === "sms") {
           if (!lead.phoneE164) { await advance(e.id, e.step + 1, steps, now); res.skipped++; continue; }
-          const t = await db.tenant.findUnique({ where: { id: e.tenantId }, select: { twilioNumber: true } });
-          await sendSms({ to: lead.phoneE164, body: bodyText, messagingServiceSid: t?.twilioNumber ?? "" });
+          await sendMessage({ tenantId: e.tenantId, sendMode, channel: "sms", to: lead.phoneE164, body: bodyText });
         } else {
           if (!lead.email) { await advance(e.id, e.step + 1, steps, now); res.skipped++; continue; }
           const base = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-          await sendEmail({ to: lead.email, subject: subject ?? "Following up", body: bodyText, unsubscribeUrl: unsubscribeUrl(base, lead.id) });
+          await sendMessage({ tenantId: e.tenantId, sendMode, channel: "email", to: lead.email, subject, body: bodyText, unsubscribeUrl: unsubscribeUrl(base, lead.id) });
         }
       } catch (err) {
         if (err instanceof ChannelNotConfiguredError) {

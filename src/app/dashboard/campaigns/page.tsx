@@ -13,6 +13,7 @@ export default async function CampaignsPage() {
     id: c.id,
     name: c.name,
     active: c.active,
+    sendMode: c.sendMode === "backoffice" ? "backoffice" : "internal",
     steps: Array.isArray(c.sequence) ? (c.sequence as unknown as Campaign["steps"]) : [],
   }));
 
