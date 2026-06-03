@@ -32,6 +32,7 @@ model User {
   id           String   @id @default(cuid())
   email        String   @unique
   name         String?
+  role         String   @default("user") // "user" | "admin" (platform super-admin)
   passwordHash String
   tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   tenantId     String
