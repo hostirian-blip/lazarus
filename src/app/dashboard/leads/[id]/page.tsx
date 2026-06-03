@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireSession, tenantDb } from "@/lib/tenant";
 import { db } from "@/lib/db";
 import { AppShell, CLIENT_NAV } from "@/components/AppShell";
+import { LeadActions } from "./LeadActions";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,7 @@ export default async function LeadDetail({ params }: { params: { id: string } })
           <Field k="Email" v={lead.email} />
           <Field k="Phone" v={lead.phoneE164} mono />
           <Field k="Status" v={lead.status} />
+          <Field k="Revenue" v={`$${(lead.revenueCents / 100).toFixed(2)}`} mono />
           <Field k="Cohort" v={lead.researchCohort ?? "—"} />
           <Field k="CRM id" v={lead.crmId ?? "—"} />
           <div style={{ marginTop: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -44,6 +46,9 @@ export default async function LeadDetail({ params }: { params: { id: string } })
             {!lead.optedOut && !lead.smsConsent && !lead.emailConsent && <span className="label">No consent</span>}
           </div>
           {lead.consentSource && <p className="muted" style={{ fontSize: 13, marginTop: 8 }}>Consent source: {lead.consentSource}</p>}
+          <div style={{ marginTop: 14, borderTop: "1px solid var(--line-ink)", paddingTop: 12 }}>
+            <LeadActions id={lead.id} revenueCents={lead.revenueCents} status={lead.status} />
+          </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

@@ -40,6 +40,7 @@ export default async function Dashboard() {
         <Kpi label="Research lift" v={`${o.bookingLiftPts >= 0 ? "+" : ""}${o.bookingLiftPts}pts`} color="var(--green)" />
         <Kpi label="Cost per revived" v={o.revived ? cents(o.costPerRevivedCents) : "—"} />
         <Kpi label="Consent blocked" v={fmt(o.consentBlocked)} color="var(--rust)" />
+        <Kpi label="Revenue" v={cents(o.totalRevenueCents)} color="var(--gold)" />
       </div>
 
       <div className="cols-2">
@@ -82,8 +83,11 @@ export default async function Dashboard() {
                 <div className="num" style={{ fontSize: 24, color: "var(--green)" }}>{pct(x.treatment.bookingRate)}</div>
               </div>
             </div>
-            <Line label="Net lift" v={`${x.bookingLift >= 0 ? "+" : ""}${Math.round(x.bookingLift * 1000) / 10}pts`} color="var(--gold)" />
-            <Line label="Research cost / lead" v={x.treatment.leads ? cents(Math.round(x.treatment.costCents / x.treatment.leads)) : "$0.00"} />
+            <Line label="Booking lift" v={`${x.bookingLift >= 0 ? "+" : ""}${Math.round(x.bookingLift * 1000) / 10}pts`} color="var(--gold)" />
+            <Line label="Revenue / lead — treatment" v={cents(x.treatment.revenuePerLeadCents)} color="var(--green)" />
+            <Line label="Revenue / lead — control" v={cents(x.control.revenuePerLeadCents)} />
+            <Line label="Research cost / lead" v={cents(x.researchCostPerLeadCents)} />
+            <Line label="Net ROI / lead" v={cents(x.netRoiPerLeadCents)} color={x.netRoiPerLeadCents >= 0 ? "var(--green)" : "var(--rust)"} />
             <Line label="Data" v={x.enoughData ? "Significant" : "Not enough yet"} />
           </div>
 

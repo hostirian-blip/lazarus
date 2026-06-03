@@ -1,4 +1,4 @@
-// Split-test KPI analytics (BUILD_PLAN step 8) + dashboard overview.
+// Split-test KPI analytics (BUILD_PLAN step 8) + dashboard overview + revenue ROI.
 import { db } from "@/lib/db";
 import { hasEnoughData } from "@/lib/experiments/assignment";
 
@@ -11,6 +11,8 @@ export interface CohortStats {
   replyRate: number;
   bookingRate: number;
   costPerResearchedCents: number;
+  revenueCents: number;
+  revenuePerLeadCents: number;
 }
 
 export interface KpiSummary {
@@ -18,6 +20,9 @@ export interface KpiSummary {
   control: CohortStats;
   replyLift: number;
   bookingLift: number;
+  revenueLiftPerLeadCents: number;
+  researchCostPerLeadCents: number;
+  netRoiPerLeadCents: number;
   enoughData: boolean;
 }
 
@@ -25,6 +30,7 @@ export interface LeadRow {
   cohort: "treatment" | "control" | null;
   status: string;
   researchCostCents: number;
+  revenueCents: number;
   hasReply: boolean;
 }
 
@@ -34,6 +40,7 @@ function cohortStats(rows: LeadRow[]): CohortStats {
   const costCents = rows.reduce((s, r) => s + r.researchCostCents, 0);
   const replied = rows.filter((r) => r.hasReply || r.status === "replied" || r.status === "booked").length;
   const booked = rows.filter((r) => r.status === "booked").length;
+  const revenueCents = rows.reduce((s, r) => s + r.revenueCents, 0);
   return {
     leads,
     researched,
@@ -43,17 +50,24 @@ function cohortStats(rows: LeadRow[]): CohortStats {
     replyRate: leads ? replied / leads : 0,
     bookingRate: leads ? booked / leads : 0,
     costPerResearchedCents: researched ? Math.round(costCents / researched) : 0,
+    revenueCents,
+    revenuePerLeadCents: leads ? Math.round(revenueCents / leads) : 0,
   };
 }
 
 export function computeKpis(rows: LeadRow[]): KpiSummary {
   const treatment = cohortStats(rows.filter((r) => r.cohort === "treatment"));
   const control = cohortStats(rows.filter((r) => r.cohort === "control"));
+  const revenueLiftPerLeadCents = treatment.revenuePerLeadCents - control.revenuePerLeadCents;
+  const researchCostPerLeadCents = treatment.leads ? Math.round(treatment.costCents / treatment.leads) : 0;
   return {
     treatment,
     control,
     replyLift: treatment.replyRate - control.replyRate,
     bookingLift: treatment.bookingRate - control.bookingRate,
+    revenueLiftPerLeadCents,
+    researchCostPerLeadCents,
+    netRoiPerLeadCents: revenueLiftPerLeadCents - researchCostPerLeadCents,
     enoughData: hasEnoughData(treatment.leads, control.leads),
   };
 }
@@ -61,7 +75,7 @@ export function computeKpis(rows: LeadRow[]): KpiSummary {
 export async function getDashboardKpis(tenantId: string): Promise<KpiSummary> {
   const leads = await db.lead.findMany({
     where: { tenantId },
-    select: { id: true, researchCohort: true, status: true, researchCostCents: true },
+    select: { id: true, researchCohort: true, status: true, researchCostCents: true, revenueCents: true },
   });
   const inbound = await db.outreachEvent.findMany({
     where: { direction: "inbound", lead: { tenantId } },
@@ -73,12 +87,13 @@ export async function getDashboardKpis(tenantId: string): Promise<KpiSummary> {
     cohort: (l.researchCohort as "treatment" | "control" | null) ?? null,
     status: l.status,
     researchCostCents: l.researchCostCents,
+    revenueCents: l.revenueCents,
     hasReply: repliedSet.has(l.id),
   }));
   return computeKpis(rows);
 }
 
-// ---- Dashboard overview (headline KPIs + compliance + recent) ----
+// ---- Dashboard overview ----
 
 export interface Overview {
   imported: number;
@@ -89,6 +104,7 @@ export interface Overview {
   bookingLiftPts: number;
   costPerRevivedCents: number;
   consentBlocked: number;
+  totalRevenueCents: number;
 }
 export interface ComplianceStats {
   smsReady: number;
@@ -119,6 +135,7 @@ export async function getDashboardData(tenantId: string): Promise<DashboardData>
       researchCohort: true,
       status: true,
       researchCostCents: true,
+      revenueCents: true,
       smsConsent: true,
       emailConsent: true,
       optedOut: true,
@@ -137,6 +154,7 @@ export async function getDashboardData(tenantId: string): Promise<DashboardData>
     cohort: (l.researchCohort as "treatment" | "control" | null) ?? null,
     status: l.status,
     researchCostCents: l.researchCostCents,
+    revenueCents: l.revenueCents,
     hasReply: replied.has(l.id),
   }));
   const experiment = computeKpis(rows);
@@ -154,6 +172,7 @@ export async function getDashboardData(tenantId: string): Promise<DashboardData>
     bookingLiftPts: Math.round(experiment.bookingLift * 1000) / 10,
     costPerRevivedCents: revived ? Math.round(totalCost / revived) : 0,
     consentBlocked: leads.filter((l) => l.optedOut || (!l.smsConsent && !l.emailConsent)).length,
+    totalRevenueCents: leads.reduce((s, l) => s + l.revenueCents, 0),
   };
 
   const compliance: ComplianceStats = {
