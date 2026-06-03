@@ -1,0 +1,18 @@
+// GET /api/connectors/hubspot/start — kick off HubSpot OAuth for the current tenant.
+import { NextResponse } from "next/server";
+import { requireTenantId } from "@/lib/tenant";
+import { getHubSpotConfig, buildAuthUrl, signState } from "@/lib/connectors/hubspot-oauth";
+
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  const tenantId = await requireTenantId(); // redirects to /login if unauthenticated
+  const cfg = getHubSpotConfig();
+  if (!cfg) {
+    return NextResponse.json(
+      { error: "HubSpot is not configured. Set HUBSPOT_CLIENT_ID and HUBSPOT_CLIENT_SECRET." },
+      { status: 501 },
+    );
+  }
+  return NextResponse.redirect(buildAuthUrl(cfg, signState(tenantId)));
+}

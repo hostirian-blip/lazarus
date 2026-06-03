@@ -63,7 +63,11 @@ export default async function Dashboard() {
             <a href="/dashboard/import" style={{ color: "#2563eb" }}>
               import your dead leads (CSV/XLSX)
             </a>{" "}
-            or connect HubSpot.
+            or{" "}
+            <a href="/api/connectors/hubspot/start" style={{ color: "#2563eb" }}>
+              connect HubSpot
+            </a>
+            .
           </p>
           <p style={{ color: "#999", fontSize: 14, margin: 0 }}>
             (CRM connect arrives in BUILD_PLAN step 3.)
