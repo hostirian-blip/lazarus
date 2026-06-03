@@ -1,58 +1,40 @@
-// Platform admin section — gated to users with role "admin".
-// Deliberate exception to per-tenant scoping: only platform operators reach it.
-// Regular tenant users are redirected back to their dashboard.
+// Platform admin overview (same shell/look as the client app).
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { SignOutButton } from "../dashboard/SignOutButton";
+import { AppShell, ADMIN_NAV } from "@/components/AppShell";
 
 export const dynamic = "force-dynamic";
+const fmt = (n: number) => n.toLocaleString("en-US");
 
 export default async function AdminHome() {
   const session = await auth();
   if (!session?.user) redirect("/login");
   if (session.user.role !== "admin") redirect("/dashboard");
 
-  const [tenantCount, userCount, leadCount] = await Promise.all([
-    db.tenant.count(),
-    db.user.count(),
-    db.lead.count(),
-  ]);
+  const [tenants, users, leads] = await Promise.all([db.tenant.count(), db.user.count(), db.lead.count()]);
 
   return (
-    <main style={{ maxWidth: 880, margin: "0 auto", padding: 32 }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <h1 style={{ marginBottom: 4 }}>Lazarus Admin</h1>
-          <p style={{ margin: 0, color: "#666" }}>Signed in as {session.user.email}</p>
-        </div>
-        <SignOutButton />
-      </header>
+    <AppShell
+      nav={ADMIN_NAV}
+      active="/admin"
+      user={{ name: session.user.name, email: session.user.email, role: "admin" }}
+      breadcrumb="Platform / Admin"
+      title="Admin overview"
+    >
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 20 }}>
+        <div className="kpi"><div className="label">Tenants</div><div className="v">{fmt(tenants)}</div></div>
+        <div className="kpi"><div className="label">Users</div><div className="v">{fmt(users)}</div></div>
+        <div className="kpi"><div className="label">Leads · all tenants</div><div className="v">{fmt(leads)}</div></div>
+      </div>
 
-      <section style={{ display: "flex", gap: 16, marginTop: 24 }}>
-        <Stat label="Tenants" value={tenantCount} />
-        <Stat label="Users" value={userCount} />
-        <Stat label="Leads" value={leadCount} />
-      </section>
-
-      <p style={{ marginTop: 24 }}>
-        <a href="/admin/settings" style={{ color: "#2563eb", fontWeight: 600 }}>
-          Platform credentials →
-        </a>
-      </p>
-      <p style={{ color: "#999", fontSize: 14, marginTop: 8 }}>
-        Platform-wide overview. TODO(claude-code): expand into tenant management,
-        billing, and split-test rollups as Phase 1 progresses.
-      </p>
-    </main>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div style={{ padding: 16, border: "1px solid #eee", borderRadius: 10, minWidth: 120 }}>
-      <div style={{ fontSize: 28, fontWeight: 700 }}>{value}</div>
-      <div style={{ color: "#666", fontSize: 14 }}>{label}</div>
-    </div>
+      <div className="card" style={{ padding: 20, maxWidth: 540 }}>
+        <h3 style={{ margin: "0 0 6px", fontSize: 16 }}>Platform credentials</h3>
+        <p className="muted" style={{ fontSize: 14, marginTop: 0 }}>
+          Manage integration API keys (Anthropic, HubSpot, Twilio, email, Stripe). Stored encrypted at rest.
+        </p>
+        <a className="btn btn-gold" href="/admin/settings">Open credentials →</a>
+      </div>
+    </AppShell>
   );
 }

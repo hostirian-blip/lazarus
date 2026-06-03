@@ -1,5 +1,6 @@
 // Campaign CMS (customer-facing). Build re-nurture sequences of message templates.
 import { requireSession, tenantDb } from "@/lib/tenant";
+import { AppShell, CLIENT_NAV } from "@/components/AppShell";
 import { CampaignManager, type Campaign } from "./CampaignManager";
 
 export const dynamic = "force-dynamic";
@@ -16,16 +17,18 @@ export default async function CampaignsPage() {
   }));
 
   return (
-    <main style={{ maxWidth: 760, margin: "0 auto", padding: 32 }}>
-      <p style={{ marginBottom: 4 }}>
-        <a href="/dashboard" style={{ color: "#2563eb" }}>← Dashboard</a>
-      </p>
-      <h1>Campaigns</h1>
-      <p style={{ color: "#555" }}>
+    <AppShell
+      nav={CLIENT_NAV}
+      active="/dashboard/campaigns"
+      user={{ email: session.user.email, role: "Workspace" }}
+      breadcrumb="Workspace / Campaigns"
+      title="Campaigns"
+    >
+      <p className="muted" style={{ maxWidth: 680, marginTop: 0 }}>
         Build re-nurture sequences. Each step has a channel, a delay, and a message template the
         re-nurture agent uses. The consent gate is still enforced at send time.
       </p>
       <CampaignManager initial={initial} />
-    </main>
+    </AppShell>
   );
 }

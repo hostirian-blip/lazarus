@@ -1,6 +1,6 @@
-// Per-tenant settings (customer CMS). Brand voice, channels, research controls,
-// plus CRM connection.
+// Per-tenant settings (customer CMS).
 import { requireSession, tenantDb } from "@/lib/tenant";
+import { AppShell, CLIENT_NAV } from "@/components/AppShell";
 import { SettingsForm } from "./SettingsForm";
 
 export const dynamic = "force-dynamic";
@@ -10,30 +10,31 @@ export default async function TenantSettings() {
   const t = await tenantDb(session.user.tenantId).tenant();
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: 32 }}>
-      <p style={{ marginBottom: 4 }}>
-        <a href="/dashboard" style={{ color: "#2563eb" }}>← Dashboard</a>
-      </p>
-      <h1>Settings</h1>
+    <AppShell
+      nav={CLIENT_NAV}
+      active="/dashboard/settings"
+      user={{ name: t.name, email: session.user.email, role: "Workspace" }}
+      breadcrumb="Workspace / Settings"
+      title="Settings"
+    >
+      <div className="card" style={{ padding: 22, maxWidth: 620 }}>
+        <SettingsForm
+          initial={{
+            brandVoice: t.brandVoice ?? "",
+            emailSender: t.emailSender ?? "",
+            twilioNumber: t.twilioNumber ?? "",
+            researchEnabled: t.researchEnabled,
+            researchRolloutPct: t.researchRolloutPct,
+            researchMonthlyCapCents: t.researchMonthlyCap,
+          }}
+        />
+      </div>
 
-      <SettingsForm
-        initial={{
-          brandVoice: t.brandVoice ?? "",
-          emailSender: t.emailSender ?? "",
-          twilioNumber: t.twilioNumber ?? "",
-          researchEnabled: t.researchEnabled,
-          researchRolloutPct: t.researchRolloutPct,
-          researchMonthlyCapCents: t.researchMonthlyCap,
-        }}
-      />
-
-      <section style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid #eee" }}>
-        <h2 style={{ marginBottom: 8 }}>CRM connection</h2>
-        <p style={{ color: "#555" }}>Connect HubSpot to import leads and write activity back.</p>
-        <a href="/api/connectors/hubspot/start" style={{ display: "inline-block", padding: "10px 16px", background: "#ff7a59", color: "#fff", borderRadius: 8, textDecoration: "none" }}>
-          Connect HubSpot
-        </a>
-      </section>
-    </main>
+      <div className="card" style={{ padding: 22, maxWidth: 620, marginTop: 16 }}>
+        <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: 16 }}>CRM connection</h3>
+        <p className="muted" style={{ fontSize: 14 }}>Connect HubSpot to import leads and write activity back.</p>
+        <a className="btn btn-gold" href="/api/connectors/hubspot/start">Connect HubSpot</a>
+      </div>
+    </AppShell>
   );
 }

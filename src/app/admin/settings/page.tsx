@@ -1,8 +1,8 @@
-// Admin-only platform credentials page. Shows set/not-set status (never the
-// secret values) and lets an admin set/replace them; values are encrypted at rest.
+// Admin-only platform credentials (encrypted at rest; status-only display).
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getSettingsStatus } from "@/lib/settings/platform";
+import { AppShell, ADMIN_NAV } from "@/components/AppShell";
 import { SettingsForm } from "./SettingsForm";
 
 export const dynamic = "force-dynamic";
@@ -15,16 +15,20 @@ export default async function AdminSettings() {
   const fields = await getSettingsStatus();
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: 32 }}>
-      <p style={{ marginBottom: 4 }}>
-        <a href="/admin" style={{ color: "#2563eb" }}>← Admin</a>
+    <AppShell
+      nav={ADMIN_NAV}
+      active="/admin/settings"
+      user={{ name: session.user.name, email: session.user.email, role: "admin" }}
+      breadcrumb="Admin / Credentials"
+      title="Platform credentials"
+    >
+      <p className="muted" style={{ maxWidth: 580, marginTop: 0 }}>
+        Integration API keys, stored <strong>encrypted</strong> (AES-256-GCM) and never shown back —
+        leave a field blank to keep its current value. A saved value overrides the server <code>.env</code>.
       </p>
-      <h1>Platform credentials</h1>
-      <p style={{ color: "#555" }}>
-        Integration API keys. Stored <strong>encrypted</strong> (AES-256-GCM) and never shown back —
-        leave a field blank to keep its current value. A DB value overrides the server <code>.env</code>.
-      </p>
-      <SettingsForm fields={fields} />
-    </main>
+      <div className="card" style={{ padding: 22, maxWidth: 620 }}>
+        <SettingsForm fields={fields} />
+      </div>
+    </AppShell>
   );
 }

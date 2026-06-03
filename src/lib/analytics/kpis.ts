@@ -1,6 +1,4 @@
-// Split-test KPI analytics (BUILD_PLAN step 8). The payoff: prove research ROI so
-// a client can confidently ramp rollout %. Per cohort we surface cost/researched
-// lead, reply rate, booking rate; and the net lift (treatment vs control).
+// Split-test KPI analytics (BUILD_PLAN step 8) + dashboard overview.
 import { db } from "@/lib/db";
 import { hasEnoughData } from "@/lib/experiments/assignment";
 
@@ -18,8 +16,8 @@ export interface CohortStats {
 export interface KpiSummary {
   treatment: CohortStats;
   control: CohortStats;
-  replyLift: number; // treatment.replyRate - control.replyRate
-  bookingLift: number; // treatment.bookingRate - control.bookingRate
+  replyLift: number;
+  bookingLift: number;
   enoughData: boolean;
 }
 
@@ -48,7 +46,6 @@ function cohortStats(rows: LeadRow[]): CohortStats {
   };
 }
 
-/** Pure KPI computation over lead rows (testable). */
 export function computeKpis(rows: LeadRow[]): KpiSummary {
   const treatment = cohortStats(rows.filter((r) => r.cohort === "treatment"));
   const control = cohortStats(rows.filter((r) => r.cohort === "control"));
@@ -61,7 +58,6 @@ export function computeKpis(rows: LeadRow[]): KpiSummary {
   };
 }
 
-/** Tenant-scoped KPI summary from live data. */
 export async function getDashboardKpis(tenantId: string): Promise<KpiSummary> {
   const leads = await db.lead.findMany({
     where: { tenantId },
@@ -73,7 +69,6 @@ export async function getDashboardKpis(tenantId: string): Promise<KpiSummary> {
     distinct: ["leadId"],
   });
   const repliedSet = new Set(inbound.map((e) => e.leadId));
-
   const rows: LeadRow[] = leads.map((l) => ({
     cohort: (l.researchCohort as "treatment" | "control" | null) ?? null,
     status: l.status,
@@ -81,4 +76,111 @@ export async function getDashboardKpis(tenantId: string): Promise<KpiSummary> {
     hasReply: repliedSet.has(l.id),
   }));
   return computeKpis(rows);
+}
+
+// ---- Dashboard overview (headline KPIs + compliance + recent) ----
+
+export interface Overview {
+  imported: number;
+  eligible: number;
+  revived: number;
+  booked: number;
+  replies: number;
+  bookingLiftPts: number;
+  costPerRevivedCents: number;
+  consentBlocked: number;
+}
+export interface ComplianceStats {
+  smsReady: number;
+  missingEmail: number;
+  optedOut: number;
+}
+export interface RecentLead {
+  name: string;
+  company: string;
+  status: string;
+  tone: "green" | "gold" | "rust" | "none";
+}
+export interface DashboardData {
+  overview: Overview;
+  experiment: KpiSummary;
+  compliance: ComplianceStats;
+  recent: RecentLead[];
+}
+
+export async function getDashboardData(tenantId: string): Promise<DashboardData> {
+  const leads = await db.lead.findMany({
+    where: { tenantId },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      company: true,
+      researchCohort: true,
+      status: true,
+      researchCostCents: true,
+      smsConsent: true,
+      emailConsent: true,
+      optedOut: true,
+      createdAt: true,
+    },
+  });
+  const inbound = await db.outreachEvent.findMany({
+    where: { direction: "inbound", lead: { tenantId } },
+    select: { leadId: true },
+    distinct: ["leadId"],
+  });
+  const replied = new Set(inbound.map((e) => e.leadId));
+  type Raw = (typeof leads)[number];
+
+  const rows: LeadRow[] = leads.map((l) => ({
+    cohort: (l.researchCohort as "treatment" | "control" | null) ?? null,
+    status: l.status,
+    researchCostCents: l.researchCostCents,
+    hasReply: replied.has(l.id),
+  }));
+  const experiment = computeKpis(rows);
+
+  const isRevived = (l: Raw) => replied.has(l.id) || ["replied", "booked", "engaged"].includes(l.status);
+  const revived = leads.filter(isRevived).length;
+  const totalCost = leads.reduce((s, l) => s + l.researchCostCents, 0);
+
+  const overview: Overview = {
+    imported: leads.length,
+    eligible: leads.filter((l) => (l.smsConsent || l.emailConsent) && !l.optedOut).length,
+    revived,
+    booked: leads.filter((l) => l.status === "booked").length,
+    replies: leads.filter((l) => replied.has(l.id)).length,
+    bookingLiftPts: Math.round(experiment.bookingLift * 1000) / 10,
+    costPerRevivedCents: revived ? Math.round(totalCost / revived) : 0,
+    consentBlocked: leads.filter((l) => l.optedOut || (!l.smsConsent && !l.emailConsent)).length,
+  };
+
+  const compliance: ComplianceStats = {
+    smsReady: leads.filter((l) => l.smsConsent && !l.optedOut).length,
+    missingEmail: leads.filter((l) => !l.emailConsent).length,
+    optedOut: leads.filter((l) => l.optedOut).length,
+  };
+
+  const recent: RecentLead[] = [...leads]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 6)
+    .map((l) => {
+      const name = [l.firstName, l.lastName].filter(Boolean).join(" ") || l.company || "Lead";
+      let status = "New";
+      let tone: RecentLead["tone"] = "none";
+      if (l.optedOut) {
+        status = "Opted out";
+        tone = "rust";
+      } else if (isRevived(l)) {
+        status = "Revived";
+        tone = "green";
+      } else if (l.smsConsent || l.emailConsent) {
+        status = "Consented";
+        tone = "gold";
+      }
+      return { name, company: l.company || "—", status, tone };
+    });
+
+  return { overview, experiment, compliance, recent };
 }
