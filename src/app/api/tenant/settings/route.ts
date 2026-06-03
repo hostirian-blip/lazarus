@@ -15,6 +15,10 @@ const Body = z.object({
   researchEnabled: z.boolean().optional(),
   researchRolloutPct: z.number().int().min(0).max(100).optional(),
   researchMonthlyCapCents: z.number().int().min(0).optional(),
+  twilioAccountSid: z.string().max(120).optional(),
+  smtpHost: z.string().max(255).optional(),
+  smtpPort: z.number().int().min(0).max(65535).optional(),
+  smtpUser: z.string().max(255).optional(),
 });
 
 export async function POST(req: Request) {
@@ -33,6 +37,10 @@ export async function POST(req: Request) {
   if (d.researchEnabled !== undefined) data.researchEnabled = d.researchEnabled;
   if (d.researchRolloutPct !== undefined) data.researchRolloutPct = d.researchRolloutPct;
   if (d.researchMonthlyCapCents !== undefined) data.researchMonthlyCap = d.researchMonthlyCapCents;
+  if (d.twilioAccountSid !== undefined) data.twilioAccountSid = d.twilioAccountSid || null;
+  if (d.smtpHost !== undefined) data.smtpHost = d.smtpHost || null;
+  if (d.smtpPort !== undefined) data.smtpPort = d.smtpPort || null;
+  if (d.smtpUser !== undefined) data.smtpUser = d.smtpUser || null;
 
   await db.tenant.update({ where: { id: session.user.tenantId }, data });
   return NextResponse.json({ ok: true });

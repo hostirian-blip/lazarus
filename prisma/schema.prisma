@@ -18,6 +18,16 @@ model Setting {
   updatedAt DateTime @updatedAt
 }
 
+// Per-tenant encrypted secrets (a tenant's own sending credentials).
+model TenantSecret {
+  tenantId  String
+  key       String
+  value     String   // encrypted blob: iv:tag:ciphertext (base64)
+  updatedAt DateTime @updatedAt
+
+  @@id([tenantId, key])
+}
+
 model Tenant {
   id            String   @id @default(cuid())
   name          String
@@ -26,6 +36,11 @@ model Tenant {
   twilioNumber  String?  // provisioned per tenant (Messaging Service SID)
   emailSender   String?
   brandVoice    String?  // tone/voice guidance for the re-nurture agent
+  // Per-tenant sending gateway (their own accounts); secrets live in TenantSecret
+  twilioAccountSid String?
+  smtpHost  String?
+  smtpPort  Int?
+  smtpUser  String?
   // Research feature flag + split-test rollout
   researchEnabled    Boolean @default(false)
   researchRolloutPct Int     @default(0)   // 0-100: % of leads assigned to research-on
