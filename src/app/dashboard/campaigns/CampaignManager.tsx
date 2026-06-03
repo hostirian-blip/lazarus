@@ -50,6 +50,15 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
   const [steps, setSteps] = useState<Step[]>(campaign.steps);
   const [active, setActive] = useState(campaign.active);
   const [busy, setBusy] = useState(false);
+  const [enrollMsg, setEnrollMsg] = useState<string | null>(null);
+
+  async function launch() {
+    setEnrollMsg("Enrolling eligible leads…");
+    const res = await fetch(`/api/campaigns/${campaign.id}/enroll`, { method: "POST" });
+    const j = await res.json().catch(() => ({}));
+    setEnrollMsg(res.ok ? `Enrolled ${j.enrolled} lead(s) — ${j.alreadyEnrolled} already in, ${j.candidates} eligible.` : j.error || "Enroll failed");
+    router.refresh();
+  }
 
   async function patch(body: Record<string, unknown>) {
     setBusy(true);
@@ -79,8 +88,10 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
           />{" "}
           Active
         </label>
+        <button onClick={launch} disabled={!active} title={active ? "Enroll eligible leads" : "Activate the campaign first"} style={{ ...btn, background: active ? "#15803d" : "#9ca3af" }}>Launch</button>
         <button onClick={remove} style={{ ...btn, background: "#b91c1c" }}>Delete</button>
       </div>
+      {enrollMsg && <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--ink-dim)" }}>{enrollMsg}</p>}
 
       <div style={{ marginTop: 12 }}>
         {steps.map((s, i) => (

@@ -81,10 +81,12 @@ model Lead {
   // Research output
   researchBrief Json?
   researchCostCents Int   @default(0)
+  revenueCents Int        @default(0) // realized revenue when the lead converts
   // Outreach state
   status      String   @default("new") // new | researching | queued | engaged | replied | booked | dead
   createdAt   DateTime @default(now())
   events      OutreachEvent[]
+  enrollments Enrollment[]
 
   @@index([tenantId, status])
   @@index([tenantId, phoneE164])
@@ -98,6 +100,24 @@ model Campaign {
   sequence  Json    // steps: channel, delay, template/voice, branching
   active    Boolean @default(false)
   createdAt DateTime @default(now())
+  enrollments Enrollment[]
+}
+
+// A lead's progression through a campaign sequence — the engine's unit of work.
+model Enrollment {
+  id         String   @id @default(cuid())
+  tenantId   String
+  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId     String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId String
+  step       Int      @default(0) // index of the NEXT step to send
+  status     String   @default("active") // active | done | stopped
+  nextRunAt  DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@unique([leadId, campaignId])
+  @@index([status, nextRunAt])
 }
 
 model OutreachEvent {
