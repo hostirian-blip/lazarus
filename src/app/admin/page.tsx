@@ -35,7 +35,12 @@ export default async function AdminHome() {
         <Stat label="Leads" value={leadCount} />
       </section>
 
-      <p style={{ color: "#999", fontSize: 14, marginTop: 24 }}>
+      <p style={{ marginTop: 24 }}>
+        <a href="/admin/settings" style={{ color: "#2563eb", fontWeight: 600 }}>
+          Platform credentials →
+        </a>
+      </p>
+      <p style={{ color: "#999", fontSize: 14, marginTop: 8 }}>
         Platform-wide overview. TODO(claude-code): expand into tenant management,
         billing, and split-test rollups as Phase 1 progresses.
       </p>

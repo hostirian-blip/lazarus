@@ -1,7 +1,8 @@
-// HubSpot OAuth config + helpers (BUILD_PLAN step 3). Tokens are exchanged here;
-// stored per-tenant in CrmConnection (see ./index.ts). The OAuth `state` is HMAC-
-// signed and carries the tenantId so the callback can attribute the connection.
+// HubSpot OAuth config + helpers (BUILD_PLAN step 3). Client id/secret resolve
+// from platform settings (DB) or env. The OAuth `state` is HMAC-signed and
+// carries the tenantId so the callback can attribute the connection.
 import { createHmac, timingSafeEqual, randomBytes } from "crypto";
+import { getSetting } from "@/lib/settings/platform";
 
 export interface HubSpotConfig {
   clientId: string;
@@ -10,14 +11,14 @@ export interface HubSpotConfig {
   scopes: string;
 }
 
-/** Read HubSpot OAuth config from env. Returns null if client id/secret are unset. */
-export function getHubSpotConfig(): HubSpotConfig | null {
-  const clientId = process.env.HUBSPOT_CLIENT_ID;
-  const clientSecret = process.env.HUBSPOT_CLIENT_SECRET;
+/** Read HubSpot OAuth config. Returns null if client id/secret are unset. */
+export async function getHubSpotConfig(): Promise<HubSpotConfig | null> {
+  const clientId = await getSetting("HUBSPOT_CLIENT_ID");
+  const clientSecret = await getSetting("HUBSPOT_CLIENT_SECRET");
   if (!clientId || !clientSecret) return null;
   const base = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-  const redirectUri = process.env.HUBSPOT_REDIRECT_URI ?? `${base}/api/connectors/hubspot/callback`;
-  const scopes = process.env.HUBSPOT_SCOPES ?? "oauth crm.objects.contacts.read crm.objects.contacts.write";
+  const redirectUri = (await getSetting("HUBSPOT_REDIRECT_URI")) ?? `${base}/api/connectors/hubspot/callback`;
+  const scopes = (await getSetting("HUBSPOT_SCOPES")) ?? "oauth crm.objects.contacts.read crm.objects.contacts.write";
   return { clientId, clientSecret, redirectUri, scopes };
 }
 

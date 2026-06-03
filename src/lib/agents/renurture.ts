@@ -1,5 +1,6 @@
 import type { CrmLead } from "../connectors/types";
 import type { ResearchBrief } from "./research";
+import { getSetting } from "@/lib/settings/platform";
 
 export interface DraftArgs {
   lead: CrmLead;
@@ -47,7 +48,7 @@ function extractJson(text: string): string {
  * LLM error so drafting never hard-fails a send pipeline.
  */
 export async function draftMessage(args: DraftArgs): Promise<Draft> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = await getSetting("ANTHROPIC_API_KEY");
   const usableBrief = args.brief && args.brief.summary.trim().length > 0;
   if (!apiKey || !usableBrief) return genericMessage(args);
 
@@ -66,7 +67,7 @@ export async function draftMessage(args: DraftArgs): Promise<Draft> {
       method: "POST",
       headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({
-        model: process.env.ANTHROPIC_MODEL ?? "claude-3-5-haiku-latest",
+        model: (await getSetting("ANTHROPIC_MODEL")) ?? "claude-3-5-haiku-latest",
         max_tokens: 400,
         messages: [{ role: "user", content: prompt }],
       }),

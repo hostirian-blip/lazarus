@@ -1,4 +1,5 @@
 import type { CrmLead } from "../connectors/types";
+import { getSetting } from "@/lib/settings/platform";
 
 export interface ResearchBrief {
   summary: string; // who they are
@@ -55,7 +56,7 @@ function estimateCostCents(usage?: { input_tokens?: number; output_tokens?: numb
  * BEFORE this call so the model reasons over real signal, not just CRM fields.
  */
 export async function researchLead(lead: CrmLead): Promise<ResearchBrief> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = await getSetting("ANTHROPIC_API_KEY");
   const empty: ResearchBrief = { summary: "", whatsChanged: "", hook: "", confidence: 0, costCents: 0 };
   if (!apiKey) return empty;
 
@@ -74,7 +75,7 @@ export async function researchLead(lead: CrmLead): Promise<ResearchBrief> {
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      model: process.env.ANTHROPIC_MODEL ?? "claude-3-5-haiku-latest",
+      model: (await getSetting("ANTHROPIC_MODEL")) ?? "claude-3-5-haiku-latest",
       max_tokens: 400,
       messages: [{ role: "user", content: prompt }],
     }),

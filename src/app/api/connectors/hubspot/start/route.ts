@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const tenantId = await requireTenantId(); // redirects to /login if unauthenticated
-  const cfg = getHubSpotConfig();
+  const cfg = await getHubSpotConfig();
   if (!cfg) {
     return NextResponse.json(
       { error: "HubSpot is not configured. Set HUBSPOT_CLIENT_ID and HUBSPOT_CLIENT_SECRET." },

@@ -1,10 +1,11 @@
 // Email send via a SendGrid-compatible provider API. Includes a one-click
 // unsubscribe (CAN-SPAM): footer link + List-Unsubscribe header.
-// Gated by EMAIL_PROVIDER_API_KEY + EMAIL_FROM.
+// Credentials resolve from platform settings (DB) or env.
 import { ChannelNotConfiguredError } from "@/lib/send/errors";
+import { getSetting } from "@/lib/settings/platform";
 
-export function emailConfigured(): boolean {
-  return Boolean(process.env.EMAIL_PROVIDER_API_KEY && process.env.EMAIL_FROM);
+export async function emailConfigured(): Promise<boolean> {
+  return Boolean((await getSetting("EMAIL_PROVIDER_API_KEY")) && (await getSetting("EMAIL_FROM")));
 }
 
 export async function sendEmail(args: {
@@ -13,8 +14,8 @@ export async function sendEmail(args: {
   body: string;
   unsubscribeUrl?: string;
 }): Promise<void> {
-  const apiKey = process.env.EMAIL_PROVIDER_API_KEY;
-  const from = process.env.EMAIL_FROM;
+  const apiKey = await getSetting("EMAIL_PROVIDER_API_KEY");
+  const from = await getSetting("EMAIL_FROM");
   if (!apiKey || !from) throw new ChannelNotConfiguredError("email");
 
   const footer = args.unsubscribeUrl ? `\n\n—\nUnsubscribe: ${args.unsubscribeUrl}` : "";

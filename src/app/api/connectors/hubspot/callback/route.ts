@@ -18,7 +18,7 @@ export async function GET(req: Request) {
 
   const code = url.searchParams.get("code");
   const verified = verifyState(url.searchParams.get("state") ?? "");
-  const cfg = getHubSpotConfig();
+  const cfg = await getHubSpotConfig();
   if (!code || !verified || !cfg) {
     dash.searchParams.set("hubspot", "error");
     return NextResponse.redirect(dash);

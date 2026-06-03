@@ -12,7 +12,7 @@ export async function getTenantConnector(tenantId: string): Promise<CrmConnector
   let accessToken = conn.accessToken;
   const nearExpiry = conn.expiresAt && conn.expiresAt.getTime() < Date.now() + 60_000;
   if (nearExpiry && conn.refreshToken) {
-    const cfg = getHubSpotConfig();
+    const cfg = await getHubSpotConfig();
     if (cfg) {
       const t = await refreshAccessToken(cfg, conn.refreshToken);
       await db.crmConnection.update({

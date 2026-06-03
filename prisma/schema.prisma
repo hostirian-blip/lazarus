@@ -10,13 +10,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Platform-level settings (e.g. integration API keys). Values are encrypted at
+// rest by the app (AES-256-GCM) — never stored or returned in plaintext.
+model Setting {
+  key       String   @id
+  value     String   // encrypted blob: iv:tag:ciphertext (base64)
+  updatedAt DateTime @updatedAt
+}
+
 model Tenant {
   id            String   @id @default(cuid())
   name          String
   // Per-tenant config / connected accounts
   crmConnection CrmConnection?
-  twilioNumber  String?  // provisioned per tenant
+  twilioNumber  String?  // provisioned per tenant (Messaging Service SID)
   emailSender   String?
+  brandVoice    String?  // tone/voice guidance for the re-nurture agent
   // Research feature flag + split-test rollout
   researchEnabled    Boolean @default(false)
   researchRolloutPct Int     @default(0)   // 0-100: % of leads assigned to research-on
