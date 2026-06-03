@@ -1,11 +1,14 @@
-// Contact ingest (BUILD_PLAN step 2): parse an uploaded CSV/XLSX, map columns
-// to Lead fields, normalize phones to E.164, dedupe (within the file AND against
-// the tenant's existing leads), then insert. Always tenant-scoped via TenantDb,
-// so ingest can never write into another tenant's data.
+// Contact ingest (BUILD_PLAN step 2 + import wizard). Parse CSV/XLSX, apply a
+// field->column mapping (explicit or auto-suggested), normalize phones to E.164,
+// dedupe (in-file + against the tenant's leads), capture consent, then insert.
+// Always tenant-scoped via TenantDb. Supports dryRun (count without inserting).
 import * as XLSX from "xlsx";
 import type { CountryCode } from "libphonenumber-js";
 import { toE164 } from "@/lib/phone";
 import type { TenantDb } from "@/lib/tenant";
+
+export type Field = "firstName" | "lastName" | "email" | "phoneE164" | "company";
+export type FieldMapping = Partial<Record<Field, string>>; // our field -> source column header
 
 export interface ParsedContact {
   firstName: string | null;
@@ -23,7 +26,23 @@ export interface IngestResult {
   invalid: { row: number; reason: string }[];
 }
 
-const FIELD_ALIASES: Record<keyof ParsedContact, string[]> = {
+export interface PreviewResult {
+  headers: string[];
+  sample: Record<string, unknown>[];
+  totalRows: number;
+  mapping: FieldMapping;
+}
+
+export interface IngestOpts {
+  mapping?: FieldMapping;
+  consentSource?: string;
+  smsConsent?: boolean;
+  emailConsent?: boolean;
+  defaultCountry?: CountryCode;
+  dryRun?: boolean;
+}
+
+const FIELD_ALIASES: Record<Field, string[]> = {
   firstName: ["first name", "firstname", "first", "fname", "given name"],
   lastName: ["last name", "lastname", "last", "lname", "surname", "family name"],
   email: ["email", "e mail", "email address"],
@@ -35,28 +54,12 @@ function normalizeHeader(h: string): string {
   return String(h).toLowerCase().trim().replace(/[\s_]+/g, " ");
 }
 
-/** Map each source column header to one of our fields via alias matching. */
-function mapColumns(headers: string[]): Record<string, keyof ParsedContact> {
-  const map: Record<string, keyof ParsedContact> = {};
-  for (const header of headers) {
-    const norm = normalizeHeader(header);
-    for (const field of Object.keys(FIELD_ALIASES) as (keyof ParsedContact)[]) {
-      if (FIELD_ALIASES[field].includes(norm)) {
-        map[header] = field;
-        break;
-      }
-    }
-  }
-  return map;
-}
-
 function clean(v: unknown): string | null {
   if (v === null || v === undefined) return null;
   const s = String(v).trim();
   return s.length ? s : null;
 }
 
-/** Parse a CSV/XLSX buffer into header-keyed row objects (first sheet). */
 export function parseRows(buffer: Buffer): Record<string, unknown>[] {
   const wb = XLSX.read(buffer, { type: "buffer" });
   const sheetName = wb.SheetNames[0];
@@ -65,64 +68,61 @@ export function parseRows(buffer: Buffer): Record<string, unknown>[] {
   return XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
 }
 
-/** Stable dedupe key for a contact: prefer phone, fall back to email. */
+/** Suggest a field -> column mapping from the headers via alias matching. */
+export function suggestMapping(headers: string[]): FieldMapping {
+  const map: FieldMapping = {};
+  for (const header of headers) {
+    const norm = normalizeHeader(header);
+    for (const f of Object.keys(FIELD_ALIASES) as Field[]) {
+      if (!map[f] && FIELD_ALIASES[f].includes(norm)) {
+        map[f] = header;
+        break;
+      }
+    }
+  }
+  return map;
+}
+
+/** Parse + suggest mapping without touching the database (wizard step 1). */
+export function previewContacts(buffer: Buffer): PreviewResult {
+  const rows = parseRows(buffer);
+  const headers = rows.length ? Object.keys(rows[0]) : [];
+  return { headers, sample: rows.slice(0, 5), totalRows: rows.length, mapping: suggestMapping(headers) };
+}
+
 function dedupeKey(c: ParsedContact): string | null {
   if (c.phoneE164) return `p:${c.phoneE164}`;
   if (c.email) return `e:${c.email.toLowerCase()}`;
   return null;
 }
 
-export async function ingestContacts(
-  scoped: TenantDb,
-  buffer: Buffer,
-  defaultCountry: CountryCode = "US",
-): Promise<IngestResult> {
+export async function ingestContacts(scoped: TenantDb, buffer: Buffer, opts: IngestOpts = {}): Promise<IngestResult> {
   const rows = parseRows(buffer);
-  const result: IngestResult = {
-    totalRows: rows.length,
-    created: 0,
-    duplicatesInFile: 0,
-    duplicatesExisting: 0,
-    invalid: [],
-  };
+  const result: IngestResult = { totalRows: rows.length, created: 0, duplicatesInFile: 0, duplicatesExisting: 0, invalid: [] };
   if (rows.length === 0) return result;
 
-  const columnMap = mapColumns(Object.keys(rows[0]));
+  const mapping = opts.mapping ?? suggestMapping(Object.keys(rows[0]));
+  const country = opts.defaultCountry ?? "US";
 
-  // Pass 1: normalize fields + dedupe within the file.
+  // Pass 1: map + normalize + in-file dedupe.
   const seen = new Set<string>();
   const candidates: ParsedContact[] = [];
   rows.forEach((row, i) => {
-    const c: ParsedContact = {
-      firstName: null,
-      lastName: null,
-      email: null,
-      phoneE164: null,
-      company: null,
-    };
-    let hadPhoneInput = false;
-    for (const [col, field] of Object.entries(columnMap)) {
-      const val = clean(row[col]);
-      if (!val) continue;
-      if (field === "phoneE164") {
-        hadPhoneInput = true;
-        c.phoneE164 = toE164(val, defaultCountry);
-      } else if (field === "email") {
-        c.email = val.toLowerCase();
-      } else {
-        c[field] = val;
-      }
+    const c: ParsedContact = { firstName: null, lastName: null, email: null, phoneE164: null, company: null };
+    if (mapping.firstName) c.firstName = clean(row[mapping.firstName]);
+    if (mapping.lastName) c.lastName = clean(row[mapping.lastName]);
+    if (mapping.company) c.company = clean(row[mapping.company]);
+    if (mapping.email) {
+      const e = clean(row[mapping.email]);
+      c.email = e ? e.toLowerCase() : null;
     }
+    const rawPhone = mapping.phoneE164 ? clean(row[mapping.phoneE164]) : null;
+    if (rawPhone) c.phoneE164 = toE164(rawPhone, country);
 
-    // A lead needs at least a valid phone or an email to be reachable.
     if (!c.phoneE164 && !c.email) {
-      result.invalid.push({
-        row: i + 2, // +1 for header, +1 for 1-based
-        reason: hadPhoneInput ? "phone not valid/parseable and no email" : "no phone or email",
-      });
+      result.invalid.push({ row: i + 2, reason: rawPhone ? "phone not valid/parseable and no email" : "no phone or email" });
       return;
     }
-
     const key = dedupeKey(c);
     if (key && seen.has(key)) {
       result.duplicatesInFile++;
@@ -132,7 +132,7 @@ export async function ingestContacts(
     candidates.push(c);
   });
 
-  // Pass 2: dedupe against the tenant's existing leads (by phone or email).
+  // Pass 2: dedupe against existing tenant leads.
   const phones = candidates.map((c) => c.phoneE164).filter((v): v is string => !!v);
   const emails = candidates.map((c) => c.email).filter((v): v is string => !!v);
   const existing = await scoped.lead.findMany({
@@ -152,14 +152,18 @@ export async function ingestContacts(
       result.duplicatesExisting++;
       continue;
     }
-    await scoped.lead.create({
-      firstName: c.firstName ?? undefined,
-      lastName: c.lastName ?? undefined,
-      email: c.email ?? undefined,
-      phoneE164: c.phoneE164 ?? undefined,
-      company: c.company ?? undefined,
-      // consent fields stay false by default — the Step 4 gate must pass before any send.
-    });
+    if (!opts.dryRun) {
+      await scoped.lead.create({
+        firstName: c.firstName ?? undefined,
+        lastName: c.lastName ?? undefined,
+        email: c.email ?? undefined,
+        phoneE164: c.phoneE164 ?? undefined,
+        company: c.company ?? undefined,
+        consentSource: opts.consentSource ?? undefined,
+        smsConsent: opts.smsConsent ?? false,
+        emailConsent: opts.emailConsent ?? false,
+      });
+    }
     if (keyPhone) existingKeys.add(keyPhone);
     if (keyEmail) existingKeys.add(keyEmail);
     result.created++;

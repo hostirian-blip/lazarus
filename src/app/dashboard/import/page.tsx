@@ -1,7 +1,7 @@
-// Protected leads-import page (BUILD_PLAN step 2).
+// Multi-step leads-import wizard (BUILD_PLAN step 3).
 import { requireSession } from "@/lib/tenant";
 import { AppShell, CLIENT_NAV } from "@/components/AppShell";
-import { ImportForm } from "./ImportForm";
+import { ImportWizard } from "./ImportWizard";
 
 export const dynamic = "force-dynamic";
 
@@ -15,13 +15,8 @@ export default async function ImportPage() {
       breadcrumb="Workspace / Import"
       title="Import leads"
     >
-      <p className="muted" style={{ maxWidth: 640, marginTop: 0 }}>
-        Upload a CSV or XLSX of your old contacts. We map common columns (name, email, phone,
-        company), normalize phone numbers to E.164, and skip duplicates. Imported leads start with{" "}
-        <strong>no messaging consent</strong>; that gate must pass before any outreach.
-      </p>
-      <div className="card" style={{ padding: 22, maxWidth: 640 }}>
-        <ImportForm />
+      <div className="card" style={{ padding: 22, maxWidth: 680 }}>
+        <ImportWizard />
       </div>
     </AppShell>
   );
