@@ -49,6 +49,9 @@ function LoginForm() {
               <span>Password</span>
               <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </label>
+            <div style={{ textAlign: "right", margin: "-6px 0 14px" }}>
+              <a href="/reset" className="muted" style={{ fontSize: 13 }}>Forgot password?</a>
+            </div>
             {error && <p style={{ color: "var(--rust)", margin: "0 0 12px" }}>{error}</p>}
             <button className="btn btn-gold btn-block" type="submit" disabled={loading}>
               {loading ? "Signing in…" : "Log in"}

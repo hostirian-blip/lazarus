@@ -28,6 +28,17 @@ model TenantSecret {
   @@id([tenantId, key])
 }
 
+// Single-use tokens for password reset + email verification.
+model AuthToken {
+  token     String   @id
+  userId    String
+  kind      String   // "reset" | "verify"
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
 model Tenant {
   id            String   @id @default(cuid())
   name          String
@@ -58,6 +69,7 @@ model User {
   name         String?
   role         String   @default("user") // "user" | "admin" (platform super-admin)
   passwordHash String
+  emailVerified Boolean @default(false)
   tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   tenantId     String
   createdAt    DateTime @default(now())
