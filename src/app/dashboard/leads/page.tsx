@@ -65,8 +65,8 @@ export default async function LeadsPage({ searchParams }: { searchParams: Record
         <button className="btn btn-gold" type="submit">Search</button>
       </form>
 
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div className="card table-wrap" style={{ padding: 0 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
           <thead>
             <tr style={{ textAlign: "left", color: "var(--ink-dim)", fontSize: 12 }}>
               <th style={th}>Lead</th><th style={th}>Email</th><th style={th}>Phone</th><th style={th}>Consent</th><th style={th}>Status</th>

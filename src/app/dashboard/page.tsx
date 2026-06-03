@@ -31,7 +31,7 @@ export default async function Dashboard() {
         <span className={"badge " + (tenReady ? "badge-green" : "badge-gold")}>{tenReady ? "10DLC ready" : "10DLC pending"}</span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 14 }}>
+      <div className="kpi-grid" style={{ marginBottom: 14 }}>
         <Kpi label="Dead leads imported" v={fmt(o.imported)} />
         <Kpi label="Eligible for outreach" v={fmt(o.eligible)} />
         <Kpi label="Revived leads" v={fmt(o.revived)} color="var(--green)" />
@@ -42,7 +42,7 @@ export default async function Dashboard() {
         <Kpi label="Consent blocked" v={fmt(o.consentBlocked)} color="var(--rust)" />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 14 }}>
+      <div className="cols-2">
         <div className="card" style={{ padding: 18 }}>
           <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
             <h3 style={{ margin: 0, fontSize: 16 }}>Recently revived</h3>

@@ -37,7 +37,7 @@ export default function Home() {
   return (
     <div style={{ minHeight: "100vh", background: "radial-gradient(120% 80% at 78% -10%, #241b12 0%, var(--bg) 55%)" }}>
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 24px" }}>
-        <nav style={{ display: "flex", alignItems: "center", gap: 28, padding: "22px 0" }}>
+        <nav style={{ display: "flex", alignItems: "center", gap: 28, padding: "22px 0", flexWrap: "wrap" }}>
           <a href="/"><Brand /></a>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 20 }}>
             <a className="muted" href="#how" style={{ fontSize: 14 }}>How it works</a>
@@ -48,7 +48,7 @@ export default function Home() {
           </div>
         </nav>
 
-        <section style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 48, alignItems: "center", padding: "44px 0 64px" }}>
+        <section className="hero-grid" style={{ padding: "44px 0 64px" }}>
           <div>
             <div className="kicker">Lead Resurrection Platform</div>
             <h1 className="display" style={{ marginTop: 18 }}>
