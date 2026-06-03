@@ -1,0 +1,19 @@
+# dependencies
+/node_modules
+# next.js
+/.next/
+/out/
+/build
+# env — secrets, never commit
+.env
+.env*.local
+!.env.example
+# typescript / next build artifacts
+*.tsbuildinfo
+next-env.d.ts
+# OS / editor / drive junk
+.DS_Store
+desktop.ini
+*.pem
+# logs
+npm-debug.log*

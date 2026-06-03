@@ -1,0 +1,104 @@
+// Lazarus data model — Phase 1 MVP
+// Multi-tenant from day one: every record scopes to a Tenant (a client company).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id            String   @id @default(cuid())
+  name          String
+  // Per-tenant config / connected accounts
+  crmConnection CrmConnection?
+  twilioNumber  String?  // provisioned per tenant
+  emailSender   String?
+  // Research feature flag + split-test rollout
+  researchEnabled    Boolean @default(false)
+  researchRolloutPct Int     @default(0)   // 0-100: % of leads assigned to research-on
+  researchMonthlyCap Int     @default(0)   // spend cap in cents; 0 = no research
+  createdAt     DateTime @default(now())
+  leads         Lead[]
+  campaigns     Campaign[]
+  users         User[]
+}
+
+// A person who logs in. Always belongs to exactly one Tenant (multi-tenant rule).
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId     String
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+model CrmConnection {
+  id           String  @id @default(cuid())
+  tenant       Tenant  @relation(fields: [tenantId], references: [id])
+  tenantId     String  @unique
+  provider     String  // "hubspot" (Phase 1); "zoho" later
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId    String
+  // Identity
+  firstName   String?
+  lastName    String?
+  email       String?
+  phoneE164   String?  // normalized at ingest
+  company     String?
+  crmId       String?  // id in the source CRM
+  // Consent (TCPA / CAN-SPAM) — must be set before any outreach
+  smsConsent  Boolean  @default(false)
+  emailConsent Boolean @default(false)
+  consentSource String?
+  optedOut    Boolean  @default(false)
+  // Split-test cohort assignment (stable for the lead's life)
+  researchCohort String?  // "treatment" | "control" | null (unassigned)
+  // Research output
+  researchBrief Json?
+  researchCostCents Int   @default(0)
+  // Outreach state
+  status      String   @default("new") // new | researching | queued | engaged | replied | booked | dead
+  createdAt   DateTime @default(now())
+  events      OutreachEvent[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, phoneE164])
+}
+
+model Campaign {
+  id        String  @id @default(cuid())
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+  tenantId  String
+  name      String
+  sequence  Json    // steps: channel, delay, template/voice, branching
+  active    Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+model OutreachEvent {
+  id        String   @id @default(cuid())
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  leadId    String
+  channel   String   // sms | email
+  direction String   // outbound | inbound
+  body      String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+}
