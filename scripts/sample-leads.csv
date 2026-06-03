@@ -1,0 +1,6 @@
+first_name,last_name,email,phone,company
+Ada,Lovelace,ada@example.com,(213) 621-2727,Analytical Engines
+Grace,Hopper,grace@example.com,312-321-1000,US Navy
+Alan,Turing,alan@example.com,+44 20 7183 8750,Bletchley Park
+Ada,Lovelace,ada@example.com,2136212727,Analytical Engines
+Katherine,Johnson,,not-a-real-phone,NASA

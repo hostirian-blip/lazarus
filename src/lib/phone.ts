@@ -1,8 +1,11 @@
-// Normalize phone numbers to E.164 at ingest. Swap in libphonenumber-js for real use.
-export function toE164(raw: string, defaultCountry = "US"): string | null {
-  const digits = raw.replace(/[^\d+]/g, "");
-  if (digits.startsWith("+")) return digits;
-  if (defaultCountry === "US" && digits.length === 10) return `+1${digits}`;
-  if (defaultCountry === "US" && digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  return null; // TODO(claude-code): use libphonenumber-js for robust parsing
+// Normalize phone numbers to E.164 at ingest, using libphonenumber-js for
+// robust parsing + validation (BUILD_PLAN step 2). Returns null for anything
+// that isn't a valid number, so Lead.phoneE164 never holds garbage.
+import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
+
+export function toE164(raw: string, defaultCountry: CountryCode = "US"): string | null {
+  if (!raw) return null;
+  const parsed = parsePhoneNumberFromString(String(raw).trim(), defaultCountry);
+  if (!parsed || !parsed.isValid()) return null;
+  return parsed.number; // canonical E.164, e.g. "+14155552671"
 }

@@ -29,9 +29,22 @@ export default async function Dashboard() {
         <SignOutButton />
       </header>
 
-      <section style={{ display: "flex", gap: 16, marginTop: 24 }}>
+      <section style={{ display: "flex", gap: 16, marginTop: 24, alignItems: "center" }}>
         <Stat label="Leads" value={leadCount} />
         <Stat label="Campaigns" value={campaignCount} />
+        <a
+          href="/dashboard/import"
+          style={{
+            marginLeft: "auto",
+            padding: "10px 16px",
+            background: "#2563eb",
+            color: "#fff",
+            borderRadius: 8,
+            textDecoration: "none",
+          }}
+        >
+          Import leads
+        </a>
       </section>
 
       {leadCount === 0 && (
@@ -46,10 +59,14 @@ export default async function Dashboard() {
         >
           <h2 style={{ marginTop: 0 }}>No leads yet</h2>
           <p style={{ color: "#555" }}>
-            Your workspace is ready. Next: import your dead leads (CSV/XLSX) or connect HubSpot.
+            Your workspace is ready. Next:{" "}
+            <a href="/dashboard/import" style={{ color: "#2563eb" }}>
+              import your dead leads (CSV/XLSX)
+            </a>{" "}
+            or connect HubSpot.
           </p>
           <p style={{ color: "#999", fontSize: 14, margin: 0 }}>
-            (Import &amp; CRM connect arrive in BUILD_PLAN steps 2–3.)
+            (CRM connect arrives in BUILD_PLAN step 3.)
           </p>
         </section>
       )}
