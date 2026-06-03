@@ -21,6 +21,7 @@ export const PLATFORM_KEYS: PlatformKeyDef[] = [
   { key: "TWILIO_MESSAGING_SERVICE_SID", label: "Twilio Messaging Service SID", secret: false },
   { key: "EMAIL_PROVIDER_API_KEY", label: "Email provider API key", secret: true },
   { key: "EMAIL_FROM", label: "Email from-address", secret: false },
+  { key: "EMAIL_WEBHOOK_SECRET", label: "Inbound email webhook secret", secret: true },
   { key: "STRIPE_SECRET_KEY", label: "Stripe secret key", secret: true },
   { key: "STRIPE_WEBHOOK_SECRET", label: "Stripe webhook secret", secret: true },
 ];
