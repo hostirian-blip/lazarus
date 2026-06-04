@@ -2,12 +2,21 @@
 // Blank/absent values are ignored (so you don't have to re-enter unchanged secrets).
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { PLATFORM_KEYS, setSetting } from "@/lib/settings/platform";
+import { PLATFORM_KEYS, setSetting, getSettingsStatus } from "@/lib/settings/platform";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const ALLOWED = new Set(PLATFORM_KEYS.map((k) => k.key));
+
+// GET — admin-only status (which keys are set; never the values). Lets the
+// client confirm a save even if the POST's response was lost in transit.
+export async function GET() {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  return NextResponse.json({ fields: await getSettingsStatus() });
+}
 
 export async function POST(req: Request) {
   const session = await auth();

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export interface FieldStatus {
   key: string;
@@ -11,16 +12,34 @@ export interface FieldStatus {
 }
 
 export function SettingsForm({ fields }: { fields: FieldStatus[] }) {
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+  // Confirm whether the submitted keys are now stored (used when the POST
+  // response is lost in transit — the write is idempotent and reaches origin).
+  async function verifySaved(keys: string[]): Promise<boolean> {
+    if (keys.length === 0) return false;
+    try {
+      const r = await fetch("/api/admin/settings", { method: "GET", cache: "no-store" });
+      if (!r.ok) return false;
+      const j = (await r.json()) as { fields?: { key: string; set: boolean }[] };
+      const setKeys = new Set((j.fields ?? []).filter((f) => f.set).map((f) => f.key));
+      return keys.every((k) => setKeys.has(k));
+    } catch {
+      return false;
+    }
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
     setBusy(true);
     setMsg(null);
-    const fd = new FormData(e.currentTarget);
+    const fd = new FormData(form);
     const values: Record<string, string> = {};
     for (const [k, v] of fd.entries()) if (typeof v === "string" && v.trim()) values[k] = v;
+    const submitted = Object.keys(values);
     try {
       const res = await fetch("/api/admin/settings", {
         method: "POST",
@@ -28,10 +47,22 @@ export function SettingsForm({ fields }: { fields: FieldStatus[] }) {
         body: JSON.stringify({ values }),
       });
       const json = await res.json().catch(() => ({}));
-      setMsg(res.ok ? `Saved ${json.updated?.length ?? 0} setting(s).` : json.error ?? "Save failed");
-      if (res.ok) e.currentTarget.reset();
+      if (res.ok) {
+        setMsg(`Saved ${json.updated?.length ?? submitted.length} setting(s).`);
+        form.reset();
+        router.refresh();
+      } else {
+        setMsg(json.error ?? "Save failed");
+      }
     } catch {
-      setMsg("Network error");
+      // The response was lost in transit — verify whether it actually saved.
+      if (await verifySaved(submitted)) {
+        setMsg("Saved ✓ — the confirmation got lost in transit, but your settings are stored.");
+        form.reset();
+        router.refresh();
+      } else {
+        setMsg("Network error — please try saving again.");
+      }
     } finally {
       setBusy(false);
     }
