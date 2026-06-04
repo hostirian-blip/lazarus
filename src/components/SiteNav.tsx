@@ -6,6 +6,7 @@ const LINKS = [
   { href: "#how", label: "How it works" },
   { href: "#compliance", label: "Compliance" },
   { href: "#roi", label: "Research ROI" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 export function SiteNav() {

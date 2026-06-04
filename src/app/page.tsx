@@ -1,5 +1,6 @@
 import { Brand } from "@/components/Brand";
 import { SiteNav } from "@/components/SiteNav";
+import { Faq } from "@/components/Faq";
 
 function Stat({ n, l, color }: { n: string; l: string; color?: string }) {
   return (
@@ -165,6 +166,15 @@ export default function Home() {
               <p className="muted" style={{ fontSize: 14, marginTop: 8, margin: "8px 0 0" }}>Capped monthly — the experiment never outspends its payoff.</p>
             </div>
           </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="faq" className="section">
+          <div className="section-head">
+            <div className="kicker">FAQ</div>
+            <h2 className="section-title">Questions, answered.</h2>
+          </div>
+          <Faq />
         </section>
 
         {/* Closing CTA */}
