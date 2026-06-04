@@ -18,6 +18,7 @@ export const CLIENT_NAV: NavItem[] = [
 
 export const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Overview" },
+  { href: "/admin/users", label: "Users" },
   { href: "/admin/settings", label: "Credentials" },
   { href: "/dashboard", label: "Client app" },
 ];

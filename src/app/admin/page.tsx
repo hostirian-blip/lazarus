@@ -35,6 +35,14 @@ export default async function AdminHome() {
         </p>
         <a className="btn btn-gold" href="/admin/settings">Open credentials →</a>
       </div>
+
+      <div className="card" style={{ padding: 20, maxWidth: 540, marginTop: 16 }}>
+        <h3 style={{ margin: "0 0 6px", fontSize: 16 }}>Users &amp; admins</h3>
+        <p className="muted" style={{ fontSize: 14, marginTop: 0 }}>
+          Promote existing users to admin or create new admin accounts.
+        </p>
+        <a className="btn btn-gold" href="/admin/users">Manage users →</a>
+      </div>
     </AppShell>
   );
 }
