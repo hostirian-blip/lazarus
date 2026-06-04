@@ -84,9 +84,10 @@ model CrmConnection {
   tenant       Tenant  @relation(fields: [tenantId], references: [id])
   tenantId     String  @unique
   provider     String  // "hubspot" (Phase 1); "zoho" later
-  accessToken  String
-  refreshToken String?
+  accessToken  String    // encrypted at rest (AES-256-GCM)
+  refreshToken String?   // encrypted at rest (AES-256-GCM)
   expiresAt    DateTime?
+  lastSyncedAt DateTime?
 }
 
 model Lead {

@@ -5,14 +5,14 @@ import { getHubSpotConfig, buildAuthUrl, signState } from "@/lib/connectors/hubs
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   const tenantId = await requireTenantId(); // redirects to /login if unauthenticated
   const cfg = await getHubSpotConfig();
   if (!cfg) {
-    return NextResponse.json(
-      { error: "HubSpot is not configured. Set HUBSPOT_CLIENT_ID and HUBSPOT_CLIENT_SECRET." },
-      { status: 501 },
-    );
+    // Friendly redirect (this is a browser navigation), surfaced as a banner.
+    const settings = new URL("/dashboard/settings", new URL(req.url).origin);
+    settings.searchParams.set("hubspot", "unconfigured");
+    return NextResponse.redirect(settings);
   }
   return NextResponse.redirect(buildAuthUrl(cfg, signState(tenantId)));
 }

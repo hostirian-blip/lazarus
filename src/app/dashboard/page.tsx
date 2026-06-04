@@ -2,6 +2,7 @@
 import { requireSession, tenantDb } from "@/lib/tenant";
 import { getDashboardData } from "@/lib/analytics/kpis";
 import { AppShell, CLIENT_NAV } from "@/components/AppShell";
+import { FlashBanner } from "@/components/FlashBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ export default async function Dashboard() {
       title="Resurrection overview"
       actions={<a className="btn btn-dark" href="/dashboard/import">Import more leads</a>}
     >
+      <FlashBanner />
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
         <span className={"badge " + (tenant.researchEnabled ? "badge-green" : "badge-gold")}>{tenant.researchEnabled ? "Sending active" : "Sending paused"}</span>
         <span className="badge badge-gold">Research cohort: {tenant.researchRolloutPct}%</span>

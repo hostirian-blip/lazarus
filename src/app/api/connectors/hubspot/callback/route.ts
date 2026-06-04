@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getHubSpotConfig, verifyState, exchangeCodeForTokens } from "@/lib/connectors/hubspot-oauth";
+import { encToken } from "@/lib/connectors/token-crypto";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -26,19 +27,21 @@ export async function GET(req: Request) {
 
   try {
     const tokens = await exchangeCodeForTokens(cfg, code);
+    const access = encToken(tokens.accessToken);
+    const refresh = encToken(tokens.refreshToken);
     await db.crmConnection.upsert({
       where: { tenantId: verified.tenantId },
       update: {
         provider: "hubspot",
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
+        accessToken: access,
+        refreshToken: refresh,
         expiresAt: tokens.expiresAt,
       },
       create: {
         tenantId: verified.tenantId,
         provider: "hubspot",
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
+        accessToken: access,
+        refreshToken: refresh,
         expiresAt: tokens.expiresAt,
       },
     });
