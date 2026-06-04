@@ -2,10 +2,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function HubSpotConnect({
+// Generic CRM connection card (HubSpot, GoHighLevel, …): connected status,
+// "Sync now" with result counts, last-synced time, and disconnect.
+export function CrmConnectCard({
+  provider,
+  label,
+  blurb,
   connected,
   lastSyncedAt,
 }: {
+  provider: string;
+  label: string;
+  blurb: string;
   connected: boolean;
   lastSyncedAt: string | null;
 }) {
@@ -19,7 +27,7 @@ export function HubSpotConnect({
     setErr(null);
     setMsg(null);
     try {
-      const res = await fetch("/api/connectors/hubspot/sync", { method: "POST" });
+      const res = await fetch(`/api/connectors/${provider}/sync`, { method: "POST" });
       const j = await res.json().catch(() => ({}));
       if (res.ok) {
         setMsg(`Synced: ${j.created} new lead(s), ${j.duplicates} already on file (${j.pulled} pulled).`);
@@ -39,7 +47,7 @@ export function HubSpotConnect({
     setErr(null);
     setMsg(null);
     try {
-      const res = await fetch("/api/connectors/hubspot/disconnect", { method: "POST" });
+      const res = await fetch(`/api/connectors/${provider}/disconnect`, { method: "POST" });
       if (res.ok) {
         setMsg("Disconnected. Imported leads were kept.");
         router.refresh();
@@ -56,7 +64,7 @@ export function HubSpotConnect({
   return (
     <div>
       <h3 style={{ marginTop: 0, marginBottom: 8, fontSize: 16, display: "flex", alignItems: "center", gap: 10 }}>
-        CRM connection
+        {label}
         <span className={"badge " + (connected ? "badge-green" : "badge-gold")}>
           {connected ? "Connected" : "Not connected"}
         </span>
@@ -65,13 +73,12 @@ export function HubSpotConnect({
       {connected ? (
         <>
           <p className="muted" style={{ fontSize: 14, marginTop: 0 }}>
-            HubSpot is connected. Pull contacts in as leads — consent is mapped on import and re-checked
+            {label} is connected. Pull contacts in as leads — consent is mapped on import and re-checked
             before any message is sent.
             {lastSyncedAt && (
               <>
                 {" "}
-                Last synced{" "}
-                <strong>{new Date(lastSyncedAt).toLocaleString()}</strong>.
+                Last synced <strong>{new Date(lastSyncedAt).toLocaleString()}</strong>.
               </>
             )}
           </p>
@@ -91,10 +98,8 @@ export function HubSpotConnect({
         </>
       ) : (
         <>
-          <p className="muted" style={{ fontSize: 14, marginTop: 0 }}>
-            Connect HubSpot to import leads and write activity back to your contacts.
-          </p>
-          <a className="btn btn-gold" href="/api/connectors/hubspot/start">Connect HubSpot</a>
+          <p className="muted" style={{ fontSize: 14, marginTop: 0 }}>{blurb}</p>
+          <a className="btn btn-gold" href={`/api/connectors/${provider}/start`}>Connect {label}</a>
         </>
       )}
 

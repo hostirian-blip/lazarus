@@ -1,4 +1,4 @@
-// POST /api/connectors/hubspot/sync — pull the tenant's HubSpot contacts into Leads.
+// POST /api/connectors/gohighlevel/sync — pull the tenant's GHL contacts into Leads.
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -14,14 +14,14 @@ export async function POST() {
   if (!session?.user?.tenantId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const connector = await getTenantConnector(session.user.tenantId, "hubspot");
+  const connector = await getTenantConnector(session.user.tenantId, "gohighlevel");
   if (!connector) {
-    return NextResponse.json({ error: "HubSpot is not connected for this tenant." }, { status: 409 });
+    return NextResponse.json({ error: "GoHighLevel is not connected for this tenant." }, { status: 409 });
   }
   try {
     const result = await syncLeads(tenantDb(session.user.tenantId), connector);
     await db.crmConnection.update({
-      where: { tenantId_provider: { tenantId: session.user.tenantId, provider: "hubspot" } },
+      where: { tenantId_provider: { tenantId: session.user.tenantId, provider: "gohighlevel" } },
       data: { lastSyncedAt: new Date() },
     }).catch(() => {});
     return NextResponse.json({ ok: true, ...result });

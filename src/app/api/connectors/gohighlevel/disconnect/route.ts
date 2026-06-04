@@ -1,4 +1,4 @@
-// POST /api/connectors/hubspot/disconnect — remove this tenant's HubSpot connection.
+// POST /api/connectors/gohighlevel/disconnect — remove this tenant's GHL connection.
 // Deletes the stored (encrypted) tokens. Imported leads are kept.
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
@@ -12,6 +12,6 @@ export async function POST() {
   if (!session?.user?.tenantId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  await db.crmConnection.deleteMany({ where: { tenantId: session.user.tenantId, provider: "hubspot" } });
+  await db.crmConnection.deleteMany({ where: { tenantId: session.user.tenantId, provider: "gohighlevel" } });
   return NextResponse.json({ ok: true });
 }

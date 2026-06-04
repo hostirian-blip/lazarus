@@ -6,7 +6,7 @@ import { AppShell, CLIENT_NAV } from "@/components/AppShell";
 import { FlashBanner } from "@/components/FlashBanner";
 import { SettingsForm } from "./SettingsForm";
 import { BillingButtons } from "./BillingButtons";
-import { HubSpotConnect } from "./HubSpotConnect";
+import { CrmConnectCard } from "./CrmConnectCard";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +14,15 @@ export default async function TenantSettings() {
   const session = await requireSession();
   const t = await tenantDb(session.user.tenantId).tenant();
   const secrets = await tenantSecretStatus(session.user.tenantId);
-  const crm = await db.crmConnection.findUnique({
+  const connections = await db.crmConnection.findMany({
     where: { tenantId: session.user.tenantId },
     select: { provider: true, lastSyncedAt: true },
   });
+  const conn = (p: string) => connections.find((c) => c.provider === p);
+  const syncedAt = (p: string) => {
+    const c = conn(p);
+    return c?.lastSyncedAt ? c.lastSyncedAt.toISOString() : null;
+  };
 
   return (
     <AppShell
@@ -47,9 +52,22 @@ export default async function TenantSettings() {
       </div>
 
       <div className="card" style={{ padding: 22, maxWidth: 620, marginTop: 16 }}>
-        <HubSpotConnect
-          connected={crm?.provider === "hubspot"}
-          lastSyncedAt={crm?.lastSyncedAt ? crm.lastSyncedAt.toISOString() : null}
+        <CrmConnectCard
+          provider="hubspot"
+          label="HubSpot"
+          blurb="Connect HubSpot to import contacts as leads and write activity back."
+          connected={Boolean(conn("hubspot"))}
+          lastSyncedAt={syncedAt("hubspot")}
+        />
+      </div>
+
+      <div className="card" style={{ padding: 22, maxWidth: 620, marginTop: 16 }}>
+        <CrmConnectCard
+          provider="gohighlevel"
+          label="GoHighLevel"
+          blurb="Connect a GoHighLevel sub-account to import contacts as leads and write activity back."
+          connected={Boolean(conn("gohighlevel"))}
+          lastSyncedAt={syncedAt("gohighlevel")}
         />
       </div>
 

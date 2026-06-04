@@ -43,7 +43,7 @@ model Tenant {
   id            String   @id @default(cuid())
   name          String
   // Per-tenant config / connected accounts
-  crmConnection CrmConnection?
+  crmConnections CrmConnection[]
   twilioNumber  String?  // provisioned per tenant (Messaging Service SID)
   emailSender   String?
   brandVoice    String?  // tone/voice guidance for the re-nurture agent
@@ -82,12 +82,16 @@ model User {
 model CrmConnection {
   id           String  @id @default(cuid())
   tenant       Tenant  @relation(fields: [tenantId], references: [id])
-  tenantId     String  @unique
-  provider     String  // "hubspot" (Phase 1); "zoho" later
+  tenantId     String
+  provider     String  // "hubspot" | "gohighlevel"
   accessToken  String    // encrypted at rest (AES-256-GCM)
   refreshToken String?   // encrypted at rest (AES-256-GCM)
   expiresAt    DateTime?
   lastSyncedAt DateTime?
+  locationId   String?   // GoHighLevel sub-account scope
+
+  @@unique([tenantId, provider])
+  @@index([tenantId])
 }
 
 model Lead {

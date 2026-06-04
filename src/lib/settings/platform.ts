@@ -14,8 +14,10 @@ export interface PlatformKeyDef {
 export const PLATFORM_KEYS: PlatformKeyDef[] = [
   { key: "ANTHROPIC_API_KEY", label: "Anthropic API key", secret: true, help: "Research + re-nurture agents" },
   { key: "ANTHROPIC_MODEL", label: "Anthropic model", secret: false, help: "default: claude-3-5-haiku-latest" },
-  { key: "HUBSPOT_CLIENT_ID", label: "HubSpot client ID", secret: false },
+  { key: "HUBSPOT_CLIENT_ID", label: "HubSpot client ID", secret: false, help: "Redirect: https://lazarus.vrroom.io/api/connectors/hubspot/callback" },
   { key: "HUBSPOT_CLIENT_SECRET", label: "HubSpot client secret", secret: true },
+  { key: "GOHIGHLEVEL_CLIENT_ID", label: "GoHighLevel client ID", secret: false, help: "Redirect: https://lazarus.vrroom.io/api/connectors/gohighlevel/callback · scopes: contacts.readonly contacts.write" },
+  { key: "GOHIGHLEVEL_CLIENT_SECRET", label: "GoHighLevel client secret", secret: true },
   { key: "TWILIO_ACCOUNT_SID", label: "Twilio Account SID", secret: false },
   { key: "TWILIO_AUTH_TOKEN", label: "Twilio Auth Token", secret: true },
   { key: "TWILIO_MESSAGING_SERVICE_SID", label: "Twilio Messaging Service SID", secret: false },

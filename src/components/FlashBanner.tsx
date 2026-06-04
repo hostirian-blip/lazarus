@@ -1,26 +1,44 @@
 "use client";
 import { useEffect, useState } from "react";
 
-// Reads the ?hubspot= result from the OAuth redirect, shows a dismissible
-// banner, and strips the param from the URL so it doesn't persist on refresh.
-const MESSAGES: Record<string, { text: string; tone: "ok" | "warn" | "err" }> = {
-  connected: { text: "HubSpot connected. You can sync contacts from Settings.", tone: "ok" },
-  denied: { text: "HubSpot connection was cancelled.", tone: "warn" },
-  unconfigured: { text: "HubSpot isn't enabled yet — the platform admin needs to add HubSpot API credentials.", tone: "warn" },
-  error: { text: "Something went wrong connecting HubSpot. Please try again.", tone: "err" },
+// Reads a CRM OAuth result (?hubspot=… / ?gohighlevel=…) from the redirect,
+// shows a dismissible banner, and strips the param so it doesn't persist.
+const PROVIDERS: Record<string, string> = {
+  hubspot: "HubSpot",
+  gohighlevel: "GoHighLevel",
 };
+
+function message(label: string, result: string): { text: string; tone: "ok" | "warn" | "err" } | null {
+  switch (result) {
+    case "connected":
+      return { text: `${label} connected. You can sync contacts from Settings.`, tone: "ok" };
+    case "denied":
+      return { text: `${label} connection was cancelled.`, tone: "warn" };
+    case "unconfigured":
+      return { text: `${label} isn't enabled yet — the platform admin needs to add ${label} API credentials.`, tone: "warn" };
+    case "error":
+      return { text: `Something went wrong connecting ${label}. Please try again.`, tone: "err" };
+    default:
+      return null;
+  }
+}
 
 export function FlashBanner() {
   const [info, setInfo] = useState<{ text: string; tone: string } | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const key = params.get("hubspot");
-    if (key && MESSAGES[key]) {
-      setInfo(MESSAGES[key]);
-      params.delete("hubspot");
-      const qs = params.toString();
-      window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
+    for (const [param, label] of Object.entries(PROVIDERS)) {
+      const result = params.get(param);
+      if (!result) continue;
+      const msg = message(label, result);
+      if (msg) {
+        setInfo(msg);
+        params.delete(param);
+        const qs = params.toString();
+        window.history.replaceState({}, "", window.location.pathname + (qs ? `?${qs}` : ""));
+        break;
+      }
     }
   }, []);
 
